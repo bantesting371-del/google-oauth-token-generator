@@ -79,6 +79,12 @@ def oauth2callback():
         service = build('oauth2', 'v2', credentials=credentials)
         user_info = service.userinfo().get().execute()
         
+        # The JWT (ID token) only exists because we requested the 'openid'
+        # scope. google-auth-oauthlib stores it as credentials.id_token.
+        # If it's missing for any reason, we fail gracefully instead of
+        # crashing the whole callback.
+        jwt_token = getattr(credentials, 'id_token', None)
+        
         creds_dict = {
             'token': credentials.token,
             'refresh_token': credentials.refresh_token,
@@ -86,11 +92,13 @@ def oauth2callback():
             'client_id': credentials.client_id,
             'client_secret': credentials.client_secret,
             'scopes': credentials.scopes,
-            'expiry': credentials.expiry.isoformat() if credentials.expiry else None
+            'expiry': credentials.expiry.isoformat() if credentials.expiry else None,
+            'id_token': jwt_token
         }
         
         session['credentials'] = creds_dict
         session['user_info'] = user_info
+        session['jwt_token'] = jwt_token
         
         token_data = {
             'credentials': creds_dict,
@@ -125,6 +133,26 @@ def download_pickle():
     response.headers['Content-Type'] = 'application/octet-stream'
     response.headers['Content-Disposition'] = 'attachment; filename=token.pickle'
     return response
+
+@app.route('/download/jwt')
+def download_jwt():
+    if 'jwt_token' not in session or not session['jwt_token']:
+        return "No JWT token found. Please login again (JWT requires the 'openid' scope).", 400
+    
+    response = make_response(session['jwt_token'])
+    response.headers['Content-Type'] = 'text/plain'
+    response.headers['Content-Disposition'] = 'attachment; filename=token.jwt'
+    return response
+
+@app.route('/api/jwt')
+def get_jwt_json():
+    if 'jwt_token' not in session or not session['jwt_token']:
+        return jsonify({'error': 'No JWT token found'}), 401
+    
+    return jsonify({
+        'status': 'success',
+        'jwt_token': session['jwt_token']
+    })
 
 @app.route('/api/token')
 def get_token_json():
