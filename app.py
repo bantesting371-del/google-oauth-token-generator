@@ -1,8 +1,5 @@
+# app.py
 import os
-import json
-import pickle
-import base64
-from datetime import datetime
 from flask import Flask, request, redirect, session, url_for, render_template, jsonify, make_response
 from flask_session import Session
 from google_auth_oauthlib.flow import Flow
@@ -100,39 +97,14 @@ def oauth2callback():
         session['user_info'] = user_info
         session['jwt_token'] = jwt_token
         
-        token_data = {
-            'credentials': creds_dict,
-            'user_info': user_info,
-            'generated_at': datetime.utcnow().isoformat()
-        }
-        
-        pickle_bytes = pickle.dumps(token_data)
-        token_b64 = base64.b64encode(pickle_bytes).decode('utf-8')
-        
         return render_template('token.html',
                              user_info=user_info,
-                             token_b64=token_b64,
+                             jwt_token=jwt_token,
                              email=user_info.get('email'),
                              name=user_info.get('name'),
                              picture=user_info.get('picture'))
     except Exception as e:
         return f"Error: {str(e)}", 500
-
-@app.route('/download/pickle')
-def download_pickle():
-    if 'credentials' not in session:
-        return redirect('/')
-    
-    token_data = {
-        'credentials': session['credentials'],
-        'user_info': session.get('user_info', {})
-    }
-    
-    pickle_data = pickle.dumps(token_data)
-    response = make_response(pickle_data)
-    response.headers['Content-Type'] = 'application/octet-stream'
-    response.headers['Content-Disposition'] = 'attachment; filename=token.pickle'
-    return response
 
 @app.route('/download/jwt')
 def download_jwt():
@@ -152,17 +124,6 @@ def get_jwt_json():
     return jsonify({
         'status': 'success',
         'jwt_token': session['jwt_token']
-    })
-
-@app.route('/api/token')
-def get_token_json():
-    if 'credentials' not in session:
-        return jsonify({'error': 'Not authenticated'}), 401
-    
-    return jsonify({
-        'status': 'success',
-        'user': session.get('user_info', {}),
-        'credentials': session.get('credentials', {})
     })
 
 @app.route('/logout')
