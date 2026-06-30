@@ -4,14 +4,12 @@ from flask import Flask, request, redirect, session, url_for, render_template, j
 from flask_session import Session
 from google_auth_oauthlib.flow import Flow
 from googleapiclient.discovery import build
+from google.oauth2 import id_token
+from google.auth.transport import requests as google_requests
 from dotenv import load_dotenv
 
 load_dotenv()
 
-# Google sometimes returns scopes in a different order, or silently adds
-# 'openid' when email/profile scopes are requested. Without this, the
-# oauthlib library raises a hard error on any such mismatch and the whole
-# callback crashes with "Scope has changed from X to Y".
 os.environ['OAUTHLIB_RELAX_TOKEN_SCOPE'] = '1'
 
 app = Flask(__name__)
@@ -30,7 +28,6 @@ SCOPES = [
 ]
 
 def get_flow():
-    """Create OAuth flow with credentials from env"""
     creds_json = os.getenv('CREDENTIALS_JSON')
     if not creds_json:
         raise ValueError("CREDENTIALS_JSON environment variable not set")
@@ -73,27 +70,22 @@ def oauth2callback():
         flow.fetch_token(authorization_response=request.url)
         
         credentials = flow.credentials
+        jwt_token = getattr(credentials, 'id_token', None)
+        
+        if jwt_token:
+            try:
+                request_session = google_requests.Request()
+                id_token.verify_oauth2_token(
+                    jwt_token, 
+                    request_session, 
+                    credentials.client_id
+                )
+            except Exception as e:
+                return f"Token verification failed: {str(e)}", 400
+
         service = build('oauth2', 'v2', credentials=credentials)
         user_info = service.userinfo().get().execute()
         
-        # The JWT (ID token) only exists because we requested the 'openid'
-        # scope. google-auth-oauthlib stores it as credentials.id_token.
-        # If it's missing for any reason, we fail gracefully instead of
-        # crashing the whole callback.
-        jwt_token = getattr(credentials, 'id_token', None)
-        
-        creds_dict = {
-            'token': credentials.token,
-            'refresh_token': credentials.refresh_token,
-            'token_uri': credentials.token_uri,
-            'client_id': credentials.client_id,
-            'client_secret': credentials.client_secret,
-            'scopes': credentials.scopes,
-            'expiry': credentials.expiry.isoformat() if credentials.expiry else None,
-            'id_token': jwt_token
-        }
-        
-        session['credentials'] = creds_dict
         session['user_info'] = user_info
         session['jwt_token'] = jwt_token
         
@@ -109,7 +101,7 @@ def oauth2callback():
 @app.route('/download/jwt')
 def download_jwt():
     if 'jwt_token' not in session or not session['jwt_token']:
-        return "No JWT token found. Please login again (JWT requires the 'openid' scope).", 400
+        return "No JWT token found. Please login again.", 400
     
     response = make_response(session['jwt_token'])
     response.headers['Content-Type'] = 'text/plain'
