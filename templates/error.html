@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Error</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+        .error-box {
+            background: rgba(255,255,255,0.95);
+            padding: 40px;
+            border-radius: 16px;
+            max-width: 700px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.2);
+        }
+        h1 { color: #e74c3c; margin-top: 0; }
+        pre { 
+            background: #f4f4f4; 
+            padding: 15px; 
+            border-radius: 8px;
+            overflow: auto;
+            font-size: 12px;
+            max-height: 300px;
+        }
+        .btn {
+            display: inline-block;
+            background: #4285f4;
+            color: white;
+            padding: 12px 24px;
+            border-radius: 8px;
+            text-decoration: none;
+            margin-top: 15px;
+        }
+        .btn:hover { background: #3367d6; }
+    </style>
+</head>
+<body>
+    <div class="error-box">
+        <h1>⚠️ Error Occurred</h1>
+        <p style="color: #555;">{{ error }}</p>
+        <pre>{{ traceback if traceback else 'No traceback available' }}</pre>
+        <a href="/" class="btn">🏠 Go Back Home</a>
+    </div>
+</body>
+</html>
