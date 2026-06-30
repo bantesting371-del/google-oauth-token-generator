@@ -11,6 +11,12 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
+# Google sometimes returns scopes in a different order, or silently adds
+# 'openid' when email/profile scopes are requested. Without this, the
+# oauthlib library raises a hard error on any such mismatch and the whole
+# callback crashes with "Scope has changed from X to Y".
+os.environ['OAUTHLIB_RELAX_TOKEN_SCOPE'] = '1'
+
 app = Flask(__name__)
 app.config['SECRET_KEY'] = os.urandom(24)
 app.config['SESSION_TYPE'] = 'filesystem'
@@ -20,6 +26,7 @@ app.config['SESSION_COOKIE_NAME'] = 'session'
 Session(app)
 
 SCOPES = [
+    'openid',
     'https://www.googleapis.com/auth/userinfo.email',
     'https://www.googleapis.com/auth/userinfo.profile',
     'https://www.googleapis.com/auth/drive.readonly'
