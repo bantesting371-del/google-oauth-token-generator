@@ -11,8 +11,8 @@
         </svg>
     </div>
 
-    <h1>JWT Generated! 🎉</h1>
-    <p class="subtitle">Your Google ID Token (JWT) is ready</p>
+    <h1>Token Generated! 🎉</h1>
+    <p class="subtitle">Your Google OAuth token is ready</p>
 
     <div class="user-profile">
         <img src="{{ picture }}" alt="Profile" class="avatar">
@@ -28,60 +28,56 @@
 
     <div class="token-preview">
         <div class="token-header">
-            <span>🔐 JWT Token</span>
-
+            <span>🔐 Token Preview</span>
             <button class="copy-btn" onclick="copyToken('{{ jwt_token }}')">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
+                    <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+                </svg>
                 Copy
             </button>
         </div>
-
-        <div class="token-content" style="word-break:break-all;">
-            {{ jwt_token }}
-        </div>
+        <div class="token-content">{{ jwt_token[:150] }}...</div>
     </div>
 
     <div class="action-buttons">
-
-        <a href="/download/jwt" class="btn-download">
-            Download JWT
+        <a href="/download/jwt" class="btn-jwt">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="12" r="10"/>
+                <polyline points="12 6 12 12 16 14"/>
+            </svg>
+            Download JWT Token
         </a>
-
-        <a href="/api/jwt" target="_blank" class="btn-api">
-            View JWT API
-        </a>
-
     </div>
 
     <div class="api-endpoints">
-
         <h4>📡 API Endpoints</h4>
-
         <div class="endpoint">
             <span class="method">GET</span>
             <span class="url">/api/jwt</span>
-            <span class="desc">Returns JWT</span>
+            <span class="desc">Get JWT token</span>
         </div>
-
-        <div class="endpoint">
-            <span class="method">GET</span>
-            <span class="url">/download/jwt</span>
-            <span class="desc">Downloads JWT</span>
-        </div>
-
     </div>
 
     <a href="/logout" class="btn-logout">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+            <polyline points="16 17 21 12 16 7"/>
+            <line x1="21" y1="12" x2="9" y2="12"/>
+        </svg>
         Logout
     </a>
 
+    <div class="credit">
+        Made with ❤️ by <span class="highlight">thedigamber</span>
+    </div>
 </div>
 
 <script>
-function copyToken(token){
-    navigator.clipboard.writeText(token).then(()=>{
-        alert("JWT copied!");
+function copyToken(token) {
+    navigator.clipboard.writeText(token).then(() => {
+        alert('Token copied to clipboard!');
     });
 }
 </script>
-
 {% endblock %}
